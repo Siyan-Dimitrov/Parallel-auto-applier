@@ -1,0 +1,31 @@
+{
+  "skills_boundary": {
+    "languages": ["Python", "SQL"],
+    "frameworks": ["PyTorch", "scikit-learn", "pandas", "NumPy"],
+    "devops": ["Docker", "Git", "AWS"],
+    "databases": ["PostgreSQL", "SQLite"],
+    "tools": ["Jupyter", "VS Code"]
+  },
+  "resume_facts": {
+    "preserved_companies": [],
+    "preserved_projects": [],
+    "preserved_school": [],
+    "real_metrics": []
+  },
+  "work_authorization": {
+    "legally_authorized": true,
+    "require_sponsorship": false
+  },
+  "compensation": {
+    "salary_expectation": "",
+    "range_min": null,
+    "range_max": null,
+    "currency": "USD"
+  },
+  "eeo_voluntary": {
+    "gender": null,
+    "race_ethnicity": null,
+    "veteran_status": null,
+    "disability_status": null
+  }
+}

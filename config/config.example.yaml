@@ -1,0 +1,68 @@
+job_preferences:
+  titles:
+    - "Software Engineer"
+    - "Data Scientist"
+    - "Machine Learning Engineer"
+  locations:
+    - "Remote"
+  min_match_score: 0.6
+  results_wanted: 50
+  hours_old: 72
+
+personal_info:
+  full_name: ""
+  email: ""
+  phone: ""
+  linkedin_url: ""
+  website: ""
+  current_company: ""
+  years_experience: ""
+  notice_period: "2 weeks"  # e.g. "Immediately", "2 weeks", "1 month"
+  password: ""              # Used when creating accounts on job sites
+  address: ""
+  city: ""
+  state: ""
+  zip_code: ""
+
+ollama:
+  model: "llama3.2:3b"
+  match_model: "qwen2.5:14b"
+  vision_model: "kimi-k2.5:cloud"
+  base_url: "http://localhost:11434"
+
+browser:
+  headless: false
+  slow_mo: 500
+  timeout: 30000
+
+application:
+  max_daily_applications: 50
+  delay_between_applications: [30, 90]
+  generate_cover_letter: true
+  resume_path: "resume/resume.pdf"
+
+logging:
+  level: "INFO"
+  file: "bot.log"
+
+cdp:
+  chrome_path: ""              # Auto-detected when empty
+  base_port: 9222
+  profile_dir: "data/chrome_profiles"
+
+captcha:
+  provider: "capsolver"
+  api_key: ""
+  enabled: false
+
+email:
+  email: ""                    # Gmail address for email verification
+  app_password: ""             # Gmail app password (NOT your regular password)
+  enabled: false
+
+adzuna:
+  app_id: ""                   # Get from https://developer.adzuna.com/
+  app_key: ""
+
+careerjet:
+  affid: ""                    # Get from https://www.careerjet.com/partners/api/

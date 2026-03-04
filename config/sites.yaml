@@ -1,0 +1,5 @@
+career_pages:
+  - name: "Stripe"
+    url: "https://stripe.com/jobs/search"
+  - name: "Anthropic"
+    url: "https://www.anthropic.com/careers"

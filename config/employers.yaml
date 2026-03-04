@@ -1,0 +1,5 @@
+workday_employers:
+  - name: "Microsoft"
+    tenant: "Microsoft"
+    site_id: "External"
+    base_url: "https://microsoft.wd5.myworkdayjobs.com"
