@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+import subprocess
 import threading
 
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
@@ -315,6 +316,38 @@ async def run_tailor(config: Config, db: Database, max_jobs: int = 0):
 
 # ── Apply ───────────────────────────────────────────────────────────────
 
+def _check_cdp_alive(port: int) -> bool:
+    """Quick check if Chrome CDP is still responding on the given port."""
+    from urllib.request import urlopen
+    from urllib.error import URLError
+    try:
+        with urlopen(f"http://127.0.0.1:{port}/json/version", timeout=3) as resp:
+            return resp.status == 200
+    except (URLError, OSError, ValueError):
+        return False
+
+
+def _restart_chrome(port: int, profile_dir: str, chrome_path: str | None) -> subprocess.Popen | None:
+    """Kill and restart Chrome on the given port. Returns new Popen or None."""
+    logger = get_logger()
+    logger.info("Restarting Chrome on port %d...", port)
+    kill_chrome(port)
+    import time
+    time.sleep(2)
+    ensure_port_free(port)
+    try:
+        proc = launch_chrome(port=port, profile_dir=profile_dir, chrome_path=chrome_path)
+        if wait_for_cdp(port, timeout=20.0):
+            logger.info("Chrome restarted successfully on port %d", port)
+            return proc
+        else:
+            logger.error("Chrome restart failed — CDP not ready on port %d", port)
+            return None
+    except Exception as e:
+        logger.error("Chrome restart failed: %s", e)
+        return None
+
+
 async def _apply_worker(
     worker_id: int,
     job_queue: asyncio.Queue,
@@ -327,6 +360,7 @@ async def _apply_worker(
     dry_run: bool,
     counters: dict,
     total_jobs: int,
+    chrome_info: dict | None = None,
 ):
     """Worker coroutine that pulls jobs from the queue and applies."""
     log = get_logger()
@@ -337,6 +371,23 @@ async def _apply_worker(
             job = job_queue.get_nowait()
         except asyncio.QueueEmpty:
             break
+
+        # Check CDP health before each application and restart Chrome if dead
+        if chrome_info:
+            port = chrome_info["port"]
+            alive = await asyncio.to_thread(_check_cdp_alive, port)
+            if not alive:
+                log.warning("%s Chrome CDP dead on port %d — restarting...", tag, port)
+                new_proc = await asyncio.to_thread(
+                    _restart_chrome, port,
+                    chrome_info["profile_dir"],
+                    chrome_info["chrome_path"],
+                )
+                if new_proc:
+                    chrome_info["proc"] = new_proc
+                else:
+                    log.error("%s Chrome restart failed — skipping remaining jobs", tag)
+                    break
 
         job_num = total_jobs - job_queue.qsize()
         log.info(
@@ -512,6 +563,7 @@ async def run_apply(config: Config, db: Database, dry_run: bool = False):
     chrome_path = config.cdp.chrome_path or None
     chrome_procs = []
     applicators = []
+    chrome_infos = []
 
     try:
         for i in range(num_workers):
@@ -522,11 +574,17 @@ async def run_apply(config: Config, db: Database, dry_run: bool = False):
             proc = launch_chrome(port=port, profile_dir=profile_dir, chrome_path=chrome_path)
             chrome_procs.append((port, proc))
 
-            if not wait_for_cdp(port, timeout=15.0):
+            if not wait_for_cdp(port, timeout=20.0):
                 console.print(f"[red]Chrome CDP failed to start on port {port}. Skipping worker {i}.[/]")
                 continue
 
             applicators.append(ClaudeCodeApplicator(config, cdp_port=port))
+            chrome_infos.append({
+                "port": port,
+                "profile_dir": profile_dir,
+                "chrome_path": chrome_path,
+                "proc": proc,
+            })
             log.info("Worker %d ready on CDP port %d", i, port)
 
         if not applicators:
@@ -554,6 +612,7 @@ async def run_apply(config: Config, db: Database, dry_run: bool = False):
                 dry_run=dry_run,
                 counters=counters,
                 total_jobs=len(jobs_to_apply),
+                chrome_info=chrome_infos[i],
             )
             for i in range(len(applicators))
         ]

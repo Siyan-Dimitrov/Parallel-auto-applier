@@ -137,7 +137,7 @@ class ClaudeCodeApplicator:
                     "command": "npx",
                     "args": [
                         "@playwright/mcp@latest",
-                        f"--cdp-endpoint=http://localhost:{self.cdp_port}",
+                        f"--cdp-endpoint=http://127.0.0.1:{self.cdp_port}",
                     ],
                 }
             }
@@ -350,6 +350,15 @@ class ClaudeCodeApplicator:
         if any(pattern in tr_lower for pattern in self._SUCCESS_URL_PATTERNS):
             self.log.info("[claude-code] Detected implicit success from page URL pattern")
             return ApplicationResult(success=True)
+
+        # ── 5. Fallback: detect browser connection errors in tool results ──
+        if "ECONNREFUSED" in tool_result_text or "browser_connection" in tool_result_text:
+            self.log.warning("[claude-code] Detected browser connection failure in tool results")
+            return ApplicationResult(
+                success=False,
+                error_message="error:browser_connection_failed",
+                failure_type="transient",
+            )
 
         self.log.warning("[claude-code] No RESULT code found in output")
         self.log.warning("[claude-code] Model text (last 2000):\n%s", full_text[-2000:])

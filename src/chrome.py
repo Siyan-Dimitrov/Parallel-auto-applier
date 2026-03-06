@@ -206,7 +206,7 @@ def wait_for_cdp(port: int = 9222, timeout: float = 15.0) -> bool:
     Returns ``True`` when Chrome's ``/json/version`` is reachable,
     ``False`` on timeout.
     """
-    url = f"http://localhost:{port}/json/version"
+    url = f"http://127.0.0.1:{port}/json/version"
     deadline = time.monotonic() + timeout
     interval = 0.25
 
